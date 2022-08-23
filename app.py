@@ -112,7 +112,7 @@ def venues():
 
 @app.route('/venues/search', methods=['POST'])
 def search_venues():
-  # TODO: implement search on artists with partial string search. Ensure it is case-insensitive.
+      # TODO: implement search on venues with partial string search. Ensure it is case-insensitive.
   # seach for Hop should return "The Musical Hop".
   # search for "Music" should return "The Musical Hop" and "Park Square Live Music & Coffee"
   response={
@@ -174,7 +174,20 @@ def show_venue(venue_id):
     "name": "Park Square Live Music & Coffee",
     "genres": ["Rock n Roll", "Jazz", "Classical", "Folk"],
     "address": "34 Whiskey Moore Ave",
-    "city": [{
+    "city": "San Francisco",
+    "state": "CA",
+    "phone": "415-000-1234",
+    "website": "https://www.parksquarelivemusicandcoffee.com",
+    "facebook_link": "https://www.facebook.com/ParkSquareLiveMusicAndCoffee",
+    "seeking_talent": False,
+    "image_link": "https://images.unsplash.com/photo-1485686531765-ba63b07845a7?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=747&q=80",
+    "past_shows": [{
+      "artist_id": 5,
+      "artist_name": "Matt Quevedo",
+      "artist_image_link": "https://images.unsplash.com/photo-1495223153807-b916f75de8c5?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=334&q=80",
+      "start_time": "2019-06-15T23:00:00.000Z"
+    }],
+    "upcoming_shows": [{
       "artist_id": 6,
       "artist_name": "The Wild Sax Band",
       "artist_image_link": "https://images.unsplash.com/photo-1558369981-f9ca78462e61?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=794&q=80",
