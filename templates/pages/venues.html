@@ -1,17 +1,28 @@
 {% extends 'layouts/main.html' %}
 {% block title %}Fyyur | Venues{% endblock %}
 {% block content %}
+
+<script>
+	const deleteVenue = id => fetch(`/venues/{{ id }}`,{
+    method: 'DELETE'
+		}).then(res => res.json()
+		).then((data) =>{
+    		alert("Deleted venue with ID: " + id + " and all activities" )
+	}).catch(err => console.log(err))
+</script>
+
 {% for area in areas %}
 <h3>{{ area.city }}, {{ area.state }}</h3>
 	<ul class="items">
-		{% for venue in area.venues %}
+		{% for venue in venues %}
 		<li>
 			<a href="/venues/{{ venue.id }}">
 				<i class="fas fa-music"></i>
 				<div class="item">
-					<h5>{{ venue.name }}</h5>
+					<h5>{{ venue.name }} </h5> 
 				</div>
 			</a>
+			<form method = "DELETE"><button onclick="deleteVenue(venue.id)">Delete</button></form>
 		</li>
 		{% endfor %}
 	</ul>

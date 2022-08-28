@@ -13,6 +13,7 @@ from logging import Formatter, FileHandler
 from flask_wtf import Form
 from forms import *
 from flask_migrate import Migrate
+import datetime
 
 #----------------------------------------------------------------------------#
 # App Config.
@@ -83,10 +84,7 @@ class Show(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     venue_id = db.Column(db.Integer, db.ForeignKey('venue.id'))
-    venue_name = db.Column(db.String(120))
     artist_id = db.Column(db.Integer, db.ForeignKey('artist.id'))
-    artist_name = db.Column(db.String(120))
-    artist_image_link = db.Column(db.String(500))
     start_time = db.Column(db.DateTime)
 
 
@@ -95,7 +93,7 @@ class Show(db.Model):
 #----------------------------------------------------------------------------#
 
 def format_datetime(value, format='medium'):
-  date = dateutil.parser.parse(value)
+  date = dateutil.parser.parse(str(value))
   if format == 'full':
       format="EEEE MMMM, d, y 'at' h:mma"
   elif format == 'medium':
@@ -122,8 +120,9 @@ def venues():
   #       num_upcoming_shows should be aggregated based on number of upcoming shows per venue.
 
   data = Venue.query.all()
+  venues = Venue.query.join(Show).filter(Show.start_time < datetime.datetime.now())
   
-  return render_template('pages/venues.html', areas=data);
+  return render_template('pages/venues.html', areas=data, venues=venues);
 
 @app.route('/venues/search', methods=['POST'])
 def search_venues():
@@ -203,9 +202,22 @@ def delete_venue(venue_id):
   # TODO: Complete this endpoint for taking a venue_id, and using
   # SQLAlchemy ORM to delete a record. Handle cases where the session commit could fail.
 
+  print("PRINTING DELETE REQUEST")
+  try:
+    del_obj = db.session.query(Venue).filter(Venue.id==venue_id)
+    db.session.delete(del_obj)
+    db.session.commit()
+
+    flash('Venue record ' + del_obj.name + ' with ID: ' + del_obj.id + ' deleted successfully')
+
+  except:
+    flash('Error! Could not delete record ' + del_obj.name + ' with ID: ' + del_obj.id)
+
   # BONUS CHALLENGE: Implement a button to delete a Venue on a Venue Page, have it so that
   # clicking that button delete it from the db then redirect the user to the homepage
-  return None
+
+  finally:
+    return render_template('pages/venues.html')
 
 #  Artists
 #  ----------------------------------------------------------------
@@ -398,7 +410,8 @@ def create_show_submission():
 
   if request.method == 'POST':
     print(request.form)
-    try:
+    if True:
+    #try:
       show = Show(
         venue_id = request.form['venue_id'],
         artist_id = request.form['artist_id'],
@@ -411,14 +424,14 @@ def create_show_submission():
       # on successful db insert, flash success
       flash('Show was successfully listed!')
 
-    except:
+    #except:
       # TODO: on unsuccessful db insert, flash an error instead.
       # e.g., flash('An error occurred. Show could not be listed.')
       # see: http://flask.pocoo.org/docs/1.0/patterns/flashing/
 
       flash('An error occurred. Show could not be listed.')
 
-    finally:
+    #finally:
       return render_template('pages/home.html')
 
 @app.errorhandler(404)
