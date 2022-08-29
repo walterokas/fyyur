@@ -14,6 +14,7 @@ from flask_wtf import Form
 from forms import *
 from flask_migrate import Migrate
 import datetime
+from sqlalchemy.orm import relationship
 
 #----------------------------------------------------------------------------#
 # App Config.
@@ -53,6 +54,7 @@ class Venue(db.Model):
     website = db.Column(db.String(500))
     seeking_talent = db.Column(db.Boolean, default=False)
     seeking_description = db.Column(db.String(500))
+    children = relationship("Show", cascade="all,delete", backref="venue")
 
     # def __repr__(self):
     #   #return {"Venue ID": self.id, "Venue Name":self.name}
@@ -203,12 +205,15 @@ def delete_venue(venue_id):
   # SQLAlchemy ORM to delete a record. Handle cases where the session commit could fail.
 
   print("PRINTING DELETE REQUEST")
+  print(venue_id)
+
+  #if True:
   try:
-    del_obj = db.session.query(Venue).filter(Venue.id==venue_id)
+    del_obj = Venue.query.get(venue_id)
     db.session.delete(del_obj)
     db.session.commit()
 
-    flash('Venue record ' + del_obj.name + ' with ID: ' + del_obj.id + ' deleted successfully')
+    flash('Venue record ' + del_obj.name + ' with ID: ' + str(del_obj.id) + ' deleted successfully')
 
   except:
     flash('Error! Could not delete record ' + del_obj.name + ' with ID: ' + del_obj.id)
