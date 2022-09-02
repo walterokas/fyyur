@@ -6,27 +6,17 @@ import json
 import dateutil.parser
 import babel
 from flask import Flask, render_template, request, Response, flash, redirect, url_for
-from flask_moment import Moment
-from flask_sqlalchemy import SQLAlchemy
 import logging
 from logging import Formatter, FileHandler
 from flask_wtf import Form
 from forms import *
-from flask_migrate import Migrate
 import datetime
-from sqlalchemy.orm import relationship
+from models import app, Venue, Artist, Show, db
 
 #----------------------------------------------------------------------------#
 # App Config.
 #----------------------------------------------------------------------------#
 
-app = Flask(__name__)
-moment = Moment(app)
-app.config.from_object('config')
-db = SQLAlchemy(app)
-
-# TODO: connect to a local postgresql database
-migrate = Migrate(app, db)
 
 # RESOURCES - https://flask-migrate.readthedocs.io/en/latest/
 # RESOURCES - https://www3.ntu.edu.sg/home/ehchua/programming/sql/PostgreSQL_GetStarted.html
@@ -34,60 +24,6 @@ migrate = Migrate(app, db)
 # flask db stamp head
 # flask db migrate
 # flask db upgrade
-
-#----------------------------------------------------------------------------#
-# Models.
-#----------------------------------------------------------------------------#
-
-class Venue(db.Model):
-    __tablename__ = 'venue'
-
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String)
-    city = db.Column(db.String(120))
-    state = db.Column(db.String(120))
-    address = db.Column(db.String(120))
-    phone = db.Column(db.String(120))
-    image_link = db.Column(db.String(500))
-    facebook_link = db.Column(db.String(120))
-    genres = db.Column(db.String(120))
-    website = db.Column(db.String(500))
-    seeking_talent = db.Column(db.Boolean, default=False)
-    seeking_description = db.Column(db.String(500))
-    children = relationship("Show", cascade="all,delete", backref="venue")
-
-    # def __repr__(self):
-    #   #return {"Venue ID": self.id, "Venue Name":self.name}
-    #   return 'Venue(' + str(self.id) + ',' + str(self.name) + ')'
-
-    # TODO: implement any missing fields, as a database migration using Flask-Migrate
-
-class Artist(db.Model):
-    __tablename__ = 'artist'
-
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String)
-    city = db.Column(db.String(120))
-    state = db.Column(db.String(120))
-    phone = db.Column(db.String(120))
-    genres = db.Column(db.String(120))
-    image_link = db.Column(db.String(500))
-    facebook_link = db.Column(db.String(120))
-    website = db.Column(db.String(500))
-    seeking_venue = db.Column(db.Boolean, default=False)
-    seeking_description = db.Column(db.String(500))
-
-    # TODO: implement any missing fields, as a database migration using Flask-Migrate
-
-# TODO Implement Show and Artist models, and complete all model relationships and properties, as a database migration.
-
-class Show(db.Model):
-    __tablename__ = 'show'
-
-    id = db.Column(db.Integer, primary_key=True)
-    venue_id = db.Column(db.Integer, db.ForeignKey('venue.id'))
-    artist_id = db.Column(db.Integer, db.ForeignKey('artist.id'))
-    start_time = db.Column(db.DateTime)
 
 
 #----------------------------------------------------------------------------#
@@ -122,7 +58,8 @@ def venues():
   #       num_upcoming_shows should be aggregated based on number of upcoming shows per venue.
 
   data = Venue.query.all()
-  venues = Venue.query.join(Show).filter(Show.start_time < datetime.datetime.now())
+  #data = Venue.query.join(Show).filter(Show.start_time < datetime.datetime.now()).all()
+  venues = Venue.query.join(Show).filter(Show.start_time < datetime.datetime.now()).all()
   
   return render_template('pages/venues.html', areas=data, venues=venues);
 
@@ -138,10 +75,11 @@ def search_venues():
 
   response={
     "count": data.count(),
-    "data": data
+    "data": data,
   }
 
   return render_template('pages/search_venues.html', results=response, search_term=request.form.get('search_term', ''))
+  
 
 @app.route('/venues/<int:venue_id>')
 def show_venue(venue_id):
@@ -149,9 +87,14 @@ def show_venue(venue_id):
   # TODO: replace with real venue data from the venues table, using venue_id
 
   data = Venue.query.get(venue_id)
+  response = {
+    "data": data,
+    "genres": data.genres
+  }
+
 
   # data = list(filter(lambda d: d['id'] == venue_id, [data1, data2, data3]))[0]
-  return render_template('pages/show_venue.html', venue=data)
+  return render_template('pages/show_venue.html', venue=response)
 
 #  Create Venue
 #  ----------------------------------------------------------------
@@ -171,7 +114,7 @@ def create_venue_submission():
     try:
       venue = Venue(
         name = request.form['name'],
-        genres = request.form['genres'],
+        genres = request.form.getlist('genres'),
         address = request.form['address'],
         city = request.form['city'],
         state = request.form['state'],
@@ -204,25 +147,44 @@ def delete_venue(venue_id):
   # TODO: Complete this endpoint for taking a venue_id, and using
   # SQLAlchemy ORM to delete a record. Handle cases where the session commit could fail.
 
-  print("PRINTING DELETE REQUEST")
-  print(venue_id)
-
-  #if True:
   try:
-    del_obj = Venue.query.get(venue_id)
-    db.session.delete(del_obj)
+
+    show = db.session.query(Show).filter_by(venue_id=venue_id).first()
+    if show:
+        db.session.delete(show)
+
+    venue = db.session.query(Venue).filter_by(id=venue_id).first()
+
+    name = venue.name
+    db.session.delete(venue)
     db.session.commit()
+    flash('Venue, ' + name + ' successfully deleted.')
 
-    flash('Venue record ' + del_obj.name + ' with ID: ' + str(del_obj.id) + ' deleted successfully')
-
-  except:
-    flash('Error! Could not delete record ' + del_obj.name + ' with ID: ' + del_obj.id)
-
-  # BONUS CHALLENGE: Implement a button to delete a Venue on a Venue Page, have it so that
-  # clicking that button delete it from the db then redirect the user to the homepage
+  except Exception as e:
+    flash('Something went wrong. ' + name + ' could not be deleted.')
 
   finally:
-    return render_template('pages/venues.html')
+    return redirect(url_for('index'))
+
+  # print("PRINTING DELETE REQUEST")
+  # print(venue_id)
+
+  # #if True:
+  # try:
+  #   del_obj = Venue.query.get(venue_id)
+  #   db.session.delete(del_obj)
+  #   db.session.commit()
+
+  #   flash('Venue record ' + del_obj.name + ' with ID: ' + str(del_obj.id) + ' deleted successfully')
+
+  # except:
+  #   flash('Error! Could not delete record ' + del_obj.name + ' with ID: ' + del_obj.id)
+
+  # # BONUS CHALLENGE: Implement a button to delete a Venue on a Venue Page, have it so that
+  # # clicking that button delete it from the db then redirect the user to the homepage
+
+  # finally:
+  #   return render_template('pages/venues.html')
 
 #  Artists
 #  ----------------------------------------------------------------
@@ -245,7 +207,8 @@ def search_artists():
 
   response={
     "count": data.count(),
-    "data": data
+    "data": data,
+    "genres": request.form.getlist('genres')
   }
   return render_template('pages/search_artists.html', results=response, search_term=request.form.get('search_term', ''))
 
@@ -281,7 +244,6 @@ def edit_artist_submission(artist_id):
       artist = Artist(
         name = request.form['name'],
         genres = request.form['genres'],
-        #address = request.form['address'],
         city = request.form['city'],
         state = request.form['state'],
         phone = request.form['phone'],
@@ -321,7 +283,7 @@ def edit_venue_submission(venue_id):
     try:
       venue = Venue(
         name = request.form['name'],
-        genres = request.form['genres'],
+        genres = request.form.getlist('genres'),
         address = request.form['address'],
         city = request.form['city'],
         state = request.form['state'],
@@ -362,8 +324,7 @@ def create_artist_submission():
     try:
       artist = Artist(
         name = request.form['name'],
-        genres = request.form['genres'],
-        #address = request.form['address'],
+        genres = request.form.getlist('genres'),
         city = request.form['city'],
         state = request.form['state'],
         phone = request.form['phone'],
