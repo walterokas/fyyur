@@ -58,8 +58,11 @@ def venues():
   #       num_upcoming_shows should be aggregated based on number of upcoming shows per venue.
 
   data = Venue.query.all()
-  #data = Venue.query.join(Show).filter(Show.start_time < datetime.datetime.now()).all()
+  print("AREAS: ", data)
+  
   venues = Venue.query.join(Show).filter(Show.start_time < datetime.datetime.now()).all()
+  # venues = 
+  print("VENUES: ", venues)
   
   return render_template('pages/venues.html', areas=data, venues=venues);
 
@@ -217,7 +220,9 @@ def show_artist(artist_id):
   # shows the artist page with the given artist_id
   # TODO: replace with real artist data from the artist table, using artist_id
 
-  data = Artist.query.get(artist_id)
+  # data = Artist.query.get(id=artist_id)
+  data = db.session.query(Artist).filter_by(id=artist_id).first()
+  print("DATA: ", data)
 
   return render_template('pages/show_artist.html', artist=data)
 
@@ -376,8 +381,8 @@ def create_show_submission():
 
   if request.method == 'POST':
     print(request.form)
-    if True:
-    #try:
+    #if True:
+    try:
       show = Show(
         venue_id = request.form['venue_id'],
         artist_id = request.form['artist_id'],
@@ -390,14 +395,14 @@ def create_show_submission():
       # on successful db insert, flash success
       flash('Show was successfully listed!')
 
-    #except:
+    except:
       # TODO: on unsuccessful db insert, flash an error instead.
       # e.g., flash('An error occurred. Show could not be listed.')
       # see: http://flask.pocoo.org/docs/1.0/patterns/flashing/
 
       flash('An error occurred. Show could not be listed.')
 
-    #finally:
+    finally:
       return render_template('pages/home.html')
 
 @app.errorhandler(404)

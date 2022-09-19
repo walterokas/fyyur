@@ -33,15 +33,18 @@
 <h3>{{ area.city }}, {{ area.state }}</h3>
 	<ul class="items">
 		{% for venue in venues %}
-		<li>
-			<a href="/venues/{{ venue.id }}">
-				<i class="fas fa-music"></i>
-				<div class="item">
-					<h5>{{ venue.name }} </h5> 
-				</div>
-			</a>
-			<button type="button" id="{{venue.id}}" onclick="deleteVenue(this.id)">Delete</button>
-		</li>
+			{% if venue.id == area.id %}
+			<li>
+				<a href="/venues/{{ venue.id }}">
+					<i class="fas fa-music"></i>
+					<div class="item">
+						<!-- <h5>{{ venue.name }} </h5>  -->
+						<h5>{{ area.name }} </h5> 
+					</div>
+				</a>
+				<button type="button" id="{{venue.id}}" onclick="deleteVenue(this.id)">Delete</button>
+			</li>
+			{% endif %}
 		{% endfor %}
 	</ul>
 {% endfor %}

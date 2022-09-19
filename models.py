@@ -46,7 +46,8 @@ class Venue(db.Model):
     website = db.Column(db.String(500))
     seeking_talent = db.Column(db.Boolean, default=False)
     seeking_description = db.Column(db.String(500))
-    children = relationship("Show", cascade="all,delete", backref="venue")
+    #children = relationship("Show", cascade="all,delete", backref="venue")
+    venue = db.relationship('Show', backref='venue')
 
     # def __repr__(self):
     #   #return {"Venue ID": self.id, "Venue Name":self.name}
@@ -68,6 +69,8 @@ class Artist(db.Model):
     website = db.Column(db.String(500))
     seeking_venue = db.Column(db.Boolean, default=False)
     seeking_description = db.Column(db.String(500))
+    artist = db.relationship('Show', backref='artist')
+
 
     # TODO: implement any missing fields, as a database migration using Flask-Migrate
 
@@ -80,5 +83,3 @@ class Show(db.Model):
     venue_id = db.Column(db.Integer, db.ForeignKey('venue.id'))
     artist_id = db.Column(db.Integer, db.ForeignKey('artist.id'))
     start_time = db.Column(db.DateTime)
-    # artist = db.relationship('Artist', backref='artist')
-    # venue = db.relationship('Venue', backref='venue')
